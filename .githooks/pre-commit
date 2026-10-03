@@ -1,0 +1,16 @@
+#!/bin/sh
+set -eu
+
+# Master branch protection hook
+# This hook prevents direct commits to the master branch
+# to enforce Pull Request workflow
+
+current_branch=$(git symbolic-ref --short HEAD 2>/dev/null || git rev-parse --short HEAD 2>/dev/null)
+
+if [ "$current_branch" = "master" ]; then
+  echo "ERROR: Direct commits to master branch are not allowed."
+  echo "Please create a feature branch and submit a Pull Request."
+  exit 1
+fi
+
+exit 0

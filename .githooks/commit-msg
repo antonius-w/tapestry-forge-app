@@ -1,0 +1,11 @@
+#!/bin/sh
+set -eu
+
+# Commit message validation via commitlint
+# This hook is triggered by git commit and receives the commit message file as argument
+
+# Change to repository root directory
+cd "$(dirname "$(dirname "$0")")"
+
+# Validate the commit message using commitlint
+npx --no -- commitlint --edit "$1"
