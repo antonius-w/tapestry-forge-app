@@ -112,4 +112,12 @@ export default defineConfigWithVueTs(
 
   ...pluginOxlint.buildFromOxlintConfig(oxlintConfig),
   skipFormatting,
+
+  {
+    files: ['src/components/ui/**'],
+    rules: {
+      'vue/define-props-destructuring': 'off',
+      'vue/multi-word-component-names': 'off',
+    },
+  },
 );
