@@ -48,7 +48,9 @@ export class PlanRepository {
       const persisted: PlanPersistenceData[] = JSON.parse(data);
       return persisted.map(this.deserialize);
     } catch (error) {
-      throw new Error('Failed to parse persisted plans', { cause: error });
+      const err: Error & { cause?: unknown } = new Error('Failed to parse persisted plans');
+      err.cause = error;
+      throw err;
     }
   }
 

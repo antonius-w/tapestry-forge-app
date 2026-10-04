@@ -9,11 +9,8 @@
 
 import { $ } from 'bun'
 import { resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
 
-const __dirname = fileURLToPath(new URL('.', import.meta.url))
-
-async function main() {
+async function main(): Promise<void> {
   try {
     const repositoryRoot = await $`git rev-parse --show-toplevel`.text().then(t => t.trim())
     const hooksPath = resolve(repositoryRoot, '.githooks')
@@ -22,24 +19,24 @@ async function main() {
     const currentHooksPath = await $`git config core.hooksPath`.text().then(t => t.trim()).catch(() => '')
     
     if (currentHooksPath === hooksPath) {
-      console.log(`Git hooks already configured: ${hooksPath}`)
+      console.warn(`Git hooks already configured: ${hooksPath}`)
       return
     }
     
     // Set the hooks path
     await $`git config core.hooksPath ${hooksPath}`
-    console.log(`Git hooks configured: ${hooksPath}`)
+    console.warn(`Git hooks configured: ${hooksPath}`)
     
     // Verify the hook exists and is executable
     const commitMsgHook = resolve(hooksPath, 'commit-msg')
     try {
       await $`test -x ${commitMsgHook}`.quiet()
-      console.log('commit-msg hook is executable')
+      console.warn('commit-msg hook is executable')
     } catch {
       console.warn(`Warning: commit-msg hook at ${commitMsgHook} is not executable`)
     }
     
-    console.log('Hook setup complete. Run `bun install` to install commitlint dependencies.')
+    console.warn('Hook setup complete. Run `bun install` to install commitlint dependencies.')
     
   } catch (error) {
     console.error('Failed to setup Git hooks:', error)
