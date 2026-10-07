@@ -33,12 +33,12 @@ export default defineConfigWithVueTs(
         {
           selector:
             'CallExpression[callee.property.name="push"][callee.object.name="router"] > Literal:first-child',
-          message: 'Use named routes with RouteNames instead of hardcoded path strings.',
+          message: 'Use named routes with RouteName instead of hardcoded path strings.',
         },
         {
           selector:
             'CallExpression[callee.property.name="push"][callee.object.name="router"] > TemplateLiteral:first-child',
-          message: 'Use named routes with RouteNames instead of template literals.',
+          message: 'Use named routes with RouteName instead of template literals.',
         },
       ],
     },

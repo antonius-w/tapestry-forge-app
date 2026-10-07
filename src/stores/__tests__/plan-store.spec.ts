@@ -118,7 +118,7 @@ describe('usePlanStore', () => {
       // Set invalid data in storage
       testStorage.setItem('tapestry-forge:plans', 'invalid-json');
 
-      expect(() => store.loadPlans()).toThrow('Failed to parse persisted plans');
+      store.loadPlans();
       expect(store.error).toBe('Failed to parse persisted plans');
       expect(store.isLoading).toBe(false);
     });

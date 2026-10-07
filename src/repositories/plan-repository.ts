@@ -91,9 +91,8 @@ export class PlanRepository {
     const plans = this.getAll();
 
     const updatedPlans = plans.map((plan) =>
-      plan.id === id ? { ...plan, ...updates, id: plan.id } : plan
+      plan.id === id ? { ...plan, ...updates, id: plan.id } : plan,
     );
-
 
     const updatedPlan = updatedPlans.find((plan) => plan.id === id);
     if (!updatedPlan) return null;
