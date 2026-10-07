@@ -1,11 +1,16 @@
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { usePlanStore } from '@/stores/plan-store';
+import { storeToRefs } from 'pinia';
 import { RouteName } from '@/router/route-names';
+import PlanCard from '@/components/plans/PlanCard.vue';
 
 const router = useRouter();
 const planStore = usePlanStore();
+const { isLoading, hasError, error, hasPlans, plans } = storeToRefs(planStore);
+
+const successMessage = ref<string>('');
 
 function navigateToCreate(): void {
   router.push({ name: RouteName.plansNew });
@@ -13,6 +18,17 @@ function navigateToCreate(): void {
 
 function navigateToEdit(id: string): void {
   router.push({ name: RouteName.plansEdit, params: { id } });
+}
+
+function handleDeleteSuccess(): void {
+  successMessage.value = 'Plan deleted successfully';
+  setTimeout(() => {
+    successMessage.value = '';
+  }, 3000);
+}
+
+function clearSuccessMessage(): void {
+  successMessage.value = '';
 }
 
 onMounted(() => {
@@ -28,36 +44,36 @@ onMounted(() => {
     </div>
 
     <!-- Loading state -->
-    <div v-if="planStore.isLoading" class="loading">
+    <div v-if="isLoading" class="loading">
       <p>Loading plans...</p>
     </div>
 
     <!-- Error state -->
-    <div v-else-if="planStore.hasError" class="error">
-      <p>Error loading plans: {{ planStore.error }}</p>
+    <div v-else-if="hasError" class="error">
+      <p>Error loading plans: {{ error }}</p>
     </div>
 
     <!-- Empty state -->
-    <div v-else-if="!planStore.hasPlans" class="empty">
+    <div v-else-if="!hasPlans" class="empty">
       <p>No plans yet</p>
       <button @click="navigateToCreate" class="create">Create your first plan</button>
     </div>
 
+    <!-- Success message -->
+    <div v-if="successMessage" class="success">
+      <p>{{ successMessage }}</p>
+      <button @click="clearSuccessMessage" class="close-success">×</button>
+    </div>
+
     <!-- Plans list -->
     <div v-else class="grid">
-      <div
-        v-for="plan in planStore.plans"
+      <PlanCard
+        v-for="plan in plans"
         :key="plan.id"
-        @click="navigateToEdit(plan.id)"
-        class="card"
-      >
-        <h3>{{ plan.title }}</h3>
-        <p v-if="plan.description" class="description">{{ plan.description }}</p>
-        <div class="date-time">
-          <span>{{ plan.date }}</span>
-          <span v-if="plan.time" class="separator">at {{ plan.time }}</span>
-        </div>
-      </div>
+        :plan="plan"
+        @edit="navigateToEdit"
+        @delete="handleDeleteSuccess"
+      />
     </div>
   </div>
 </template>
@@ -127,38 +143,29 @@ onMounted(() => {
   gap: 1rem;
 }
 
-.card {
-  border: 1px solid #e5e7eb;
-  border-radius: 0.5rem;
-  padding: 1rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.card:hover {
-  background-color: #f9fafb;
-}
-
-.card h3 {
-  font-size: 1.125rem;
-  font-weight: 600;
-  margin: 0 0 0.5rem;
-}
-
-.description {
-  color: #6b7280;
-  font-size: 0.875rem;
-  margin: 0 0 0.5rem;
-}
-
-.date-time {
+.success {
+  background-color: #d1fae5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+  padding: 0.75rem 1rem;
+  border-radius: 0.25rem;
+  margin-bottom: 1rem;
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  font-size: 0.875rem;
-  color: #6b7280;
 }
 
-.separator {
-  margin-left: 0.5rem;
+.close-success {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  color: #065f46;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.close-success:hover {
+  opacity: 0.7;
 }
 </style>

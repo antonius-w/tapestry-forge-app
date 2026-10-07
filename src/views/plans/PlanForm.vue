@@ -2,12 +2,14 @@
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { usePlanStore } from '@/stores/plan-store';
+import { storeToRefs } from 'pinia';
 import { RouteName } from '@/router/route-names';
 import type { PlanFormData } from '@/models/form-data';
 
 const router = useRouter();
 const route = useRoute();
 const planStore = usePlanStore();
+const { isCreating, isUpdating } = storeToRefs(planStore);
 
 const formData = ref<PlanFormData>({
   title: '',
@@ -28,6 +30,11 @@ const planId = computed(() => {
 
 const isFormValid = computed(() => {
   return formData.value.title.trim() !== '' && formData.value.date !== '';
+});
+
+const submitButtonText = computed(() => {
+  if (isEditing.value) return isUpdating.value ? 'Saving...' : 'Save Changes';
+  return isCreating.value ? 'Creating...' : 'Create Plan';
 });
 
 function submitForm(): void {
@@ -129,20 +136,8 @@ onMounted(() => {
       </div>
 
       <div class="buttons">
-        <button
-          type="submit"
-          :disabled="planStore.isCreating || planStore.isUpdating"
-          class="primary"
-        >
-          {{
-            isEditing
-              ? planStore.isUpdating
-                ? 'Saving...'
-                : 'Save Changes'
-              : planStore.isCreating
-                ? 'Creating...'
-                : 'Create Plan'
-          }}
+        <button type="submit" :disabled="isCreating || isUpdating" class="primary">
+          {{ submitButtonText }}
         </button>
         <button type="button" @click="handleCancel" class="secondary">Cancel</button>
       </div>
