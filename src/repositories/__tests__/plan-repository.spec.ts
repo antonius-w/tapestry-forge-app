@@ -243,9 +243,7 @@ describe('PlanRepository', () => {
 
     it('should load previously persisted plans on initialization', () => {
       // Pre-populate storage
-      const existingPlans = [
-        { id: 'pre-existing-id', title: 'Existing Plan', date: '2026-10-04' },
-      ];
+      const existingPlans = [{ id: 'pre-existing-id', title: 'Existing Plan', date: '2026-10-04' }];
       storage.setItem('tapestry-forge:plans', JSON.stringify(existingPlans));
 
       const plans = repository.getAll();

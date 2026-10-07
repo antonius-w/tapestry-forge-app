@@ -4,7 +4,6 @@ import type { Plan } from '@/models/plan';
 import { PlanRepository, planRepository } from '@/repositories/plan-repository';
 
 export const usePlanStore = defineStore('plan', () => {
-  // State
   const plans = ref<Plan[]>([]);
   const isLoading = ref<boolean>(false);
   const error = ref<string | null>(null);
@@ -45,11 +44,10 @@ export const usePlanStore = defineStore('plan', () => {
 
     try {
       plans.value = repository.getAll();
-      isLoading.value = false;
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to load plans';
+    } finally {
       isLoading.value = false;
-      throw err; // Re-throw for component handling if needed
     }
   }
 
@@ -124,18 +122,16 @@ export const usePlanStore = defineStore('plan', () => {
     }
   }
 
-  // Computed getters
   const hasPlans = computed(() => plans.value.length > 0);
   const hasError = computed(() => error.value !== null);
   const hasCreateError = computed(() => createError.value !== null);
   const hasUpdateError = computed(() => updateError.value !== null);
   const hasDeleteError = computed(() => deleteError.value !== null);
   const isAnyOperationLoading = computed(
-    () => isLoading.value || isCreating.value || isUpdating.value || isDeleting.value
+    () => isLoading.value || isCreating.value || isUpdating.value || isDeleting.value,
   );
 
   return {
-    // State
     plans,
     isLoading,
     error,
@@ -146,7 +142,6 @@ export const usePlanStore = defineStore('plan', () => {
     isDeleting,
     deleteError,
 
-    // Computed
     hasPlans,
     hasError,
     hasCreateError,
@@ -154,7 +149,6 @@ export const usePlanStore = defineStore('plan', () => {
     hasDeleteError,
     isAnyOperationLoading,
 
-    // Actions
     setRepository,
     loadPlans,
     getPlanById,
