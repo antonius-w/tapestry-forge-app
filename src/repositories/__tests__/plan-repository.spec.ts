@@ -252,4 +252,197 @@ describe('PlanRepository', () => {
       expect(plans[0]?.id).toBe('pre-existing-id');
     });
   });
+
+  describe('Extended Plan with Steps', () => {
+    it('should create a plan without steps', () => {
+      const plan = repository.create({
+        title: 'Simple Plan',
+        date: '2026-10-04',
+      });
+
+      expect(plan.steps).toBeUndefined();
+    });
+
+    it('should create a plan with steps', () => {
+      const plan = repository.create({
+        title: 'Extended Plan',
+        date: '2026-10-04',
+        steps: [
+          { id: 'step-1', title: 'First step', order: 0 },
+          { id: 'step-2', title: 'Second step', description: 'Do something', order: 1 },
+        ],
+      } as const);
+
+      expect(plan.steps).toBeDefined();
+      expect(plan.steps?.length).toBe(2);
+    });
+
+    it('should preserve step content on creation', () => {
+      const plan = repository.create({
+        title: 'Extended Plan',
+        date: '2026-10-04',
+        steps: [
+          { id: 'step-1', title: 'First step', order: 0 },
+          { id: 'step-2', title: 'Second step', description: 'Do something', order: 1 },
+        ],
+      } as const);
+
+      expect(plan.steps?.[0]?.title).toBe('First step');
+      expect(plan.steps?.[0]?.order).toBe(0);
+      expect(plan.steps?.[1]?.title).toBe('Second step');
+      expect(plan.steps?.[1]?.description).toBe('Do something');
+    });
+
+    it('should persist and restore plan with steps', () => {
+      const created = repository.create({
+        title: 'Extended Plan',
+        date: '2026-10-04',
+        steps: [
+          { id: 'step-1', title: 'Step 1', order: 0 },
+          { id: 'step-2', title: 'Step 2', order: 1 },
+        ],
+      } as const);
+
+      const found = repository.getById(created.id);
+      expect(found).not.toBeNull();
+      expect(found?.steps?.length).toBe(2);
+    });
+
+    it('should persist and restore step identity and ordering', () => {
+      const stepId = 'unique-step-id';
+      const created = repository.create({
+        title: 'Plan with unique step ID',
+        date: '2026-10-04',
+        steps: [{ id: stepId, title: 'Unique Step', order: 0 }],
+      } as const);
+
+      const found = repository.getById(created.id);
+      expect(found).not.toBeNull();
+      expect(found?.steps?.length).toBe(1);
+      expect(found?.steps?.[0]?.id).toBe(stepId);
+    });
+
+    it('should persist and restore step ordering', () => {
+      const created = repository.create({
+        title: 'Ordered Plan',
+        date: '2026-10-04',
+        steps: [
+          { id: 'step-a', title: 'Alpha', order: 2 },
+          { id: 'step-b', title: 'Beta', order: 0 },
+          { id: 'step-c', title: 'Gamma', order: 1 },
+        ],
+      } as const);
+
+      const found = repository.getById(created.id);
+      expect(found).not.toBeNull();
+      expect(found?.steps?.length).toBe(3);
+    });
+
+    it('should preserve step order values on persistence', () => {
+      const created = repository.create({
+        title: 'Ordered Plan',
+        date: '2026-10-04',
+        steps: [
+          { id: 'step-a', title: 'Alpha', order: 2 },
+          { id: 'step-b', title: 'Beta', order: 0 },
+          { id: 'step-c', title: 'Gamma', order: 1 },
+        ],
+      } as const);
+
+      const found = repository.getById(created.id);
+      expect(found?.steps?.[0]?.order).toBe(2);
+      expect(found?.steps?.[1]?.order).toBe(0);
+      expect(found?.steps?.[2]?.order).toBe(1);
+    });
+
+    it('should persist plans with steps across repository instances', () => {
+      const created = repository.create({
+        title: 'Persistent Extended Plan',
+        date: '2026-10-04',
+        steps: [{ id: 'step-1', title: 'Persistent Step', order: 0 }],
+      } as const);
+
+      const newRepository = new PlanRepository(storage);
+      const found = newRepository.getById(created.id);
+
+      expect(found).not.toBeNull();
+      expect(found?.steps?.length).toBe(1);
+      expect(found?.steps?.[0]?.id).toBe('step-1');
+      expect(found?.steps?.[0]?.title).toBe('Persistent Step');
+    });
+
+    it('should maintain backward compatibility with Simple Plans without steps', () => {
+      const simplePlans = [
+        { id: 'simple-1', title: 'Simple Plan 1', date: '2026-10-04' },
+        {
+          id: 'simple-2',
+          title: 'Simple Plan 2',
+          date: '2026-10-05',
+          description: 'A description',
+        },
+      ];
+      storage.setItem('tapestry-forge:plans', JSON.stringify(simplePlans));
+
+      const plans = repository.getAll();
+      expect(plans).toHaveLength(2);
+      expect(plans[0]?.steps).toBeUndefined();
+      expect(plans[1]?.steps).toBeUndefined();
+      expect(plans[0]?.title).toBe('Simple Plan 1');
+      expect(plans[1]?.description).toBe('A description');
+    });
+
+    it('should update a plan to add steps', () => {
+      const created = repository.create({ title: 'No Steps', date: '2026-10-04' });
+      expect(created.steps).toBeUndefined();
+
+      const updated = repository.update(created.id, {
+        steps: [{ id: 'new-step', title: 'New Step', order: 0 }],
+      });
+
+      expect(updated).not.toBeNull();
+      expect(updated?.steps?.length).toBe(1);
+      expect(updated?.steps?.[0]?.id).toBe('new-step');
+
+      const found = repository.getById(created.id);
+      expect(found).not.toBeNull();
+      expect(found?.steps?.length).toBe(1);
+    });
+
+    it('should update a plan to remove steps', () => {
+      const created = repository.create({
+        title: 'With Steps',
+        date: '2026-10-04',
+        steps: [{ id: 'step-1', title: 'Step', order: 0 }],
+      } as const);
+
+      const updated = repository.update(created.id, { steps: undefined });
+
+      expect(updated).not.toBeNull();
+      expect(updated?.steps).toBeUndefined();
+
+      const found = repository.getById(created.id);
+      expect(found).not.toBeNull();
+      expect(found?.steps).toBeUndefined();
+    });
+
+    it('should persist mixed plans (with and without steps)', () => {
+      const simple = repository.create({ title: 'Simple', date: '2026-10-04' });
+      const extended = repository.create({
+        title: 'Extended',
+        date: '2026-10-05',
+        steps: [{ id: 'step-1', title: 'Step', order: 0 }],
+      } as const);
+
+      const plans = repository.getAll();
+      expect(plans).toHaveLength(2);
+
+      const foundSimple = plans.find((p) => p.id === simple.id);
+      const foundExtended = plans.find((p) => p.id === extended.id);
+
+      expect(foundSimple).toBeDefined();
+      expect(foundSimple?.steps).toBeUndefined();
+      expect(foundExtended).toBeDefined();
+      expect(foundExtended?.steps?.length).toBe(1);
+    });
+  });
 });

@@ -4,7 +4,7 @@ const STORAGE_KEY = 'tapestry-forge:plans';
 
 /**
  * Persistence representation of a Plan.
- * Matches the domain model 1:1 for Simple Plan.
+ * For backward compatibility, steps are optional in persistence data.
  */
 interface PlanPersistenceData {
   id: string;
@@ -12,6 +12,12 @@ interface PlanPersistenceData {
   description?: string;
   date: string;
   time?: string;
+  steps?: Array<{
+    id: string;
+    title: string;
+    description?: string;
+    order: number;
+  }>;
 }
 
 /**
@@ -121,12 +127,22 @@ export class PlanRepository {
    * Serializes a domain Plan to its persistence format.
    */
   private serialize(plan: Plan): PlanPersistenceData {
+    const steps = plan.steps
+      ? plan.steps.map((step) => ({
+          id: step.id,
+          title: step.title,
+          description: step.description,
+          order: step.order,
+        }))
+      : undefined;
+
     return {
       id: plan.id,
       title: plan.title,
       description: plan.description,
       date: plan.date,
       time: plan.time,
+      steps,
     };
   }
 
@@ -134,12 +150,22 @@ export class PlanRepository {
    * Deserializes persistence data to a domain Plan.
    */
   private deserialize(data: PlanPersistenceData): Plan {
+    const steps = data.steps
+      ? data.steps.map((step) => ({
+          id: step.id,
+          title: step.title,
+          description: step.description,
+          order: step.order,
+        }))
+      : undefined;
+
     return {
       id: data.id,
       title: data.title,
       description: data.description,
       date: data.date,
       time: data.time,
+      steps,
     };
   }
 
