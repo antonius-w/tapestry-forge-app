@@ -6,6 +6,7 @@ import PlansList from '@/views/plans/PlansList.vue';
 import { usePlanStore } from '@/stores/plan-store';
 import { PlanRepository } from '@/repositories/plan-repository';
 import type { Plan } from '@/models/plan';
+import PlanCard from '@/components/plans/PlanCard.vue';
 
 /**
  * In-memory storage implementation for testing.
@@ -184,5 +185,61 @@ describe('PlansList', () => {
     // Verify we show error, not empty state
     expect(wrapper.text()).toContain('Error loading plans');
     expect(wrapper.text()).not.toContain('No plans yet');
+  });
+
+  it('renders PlanCard components for each plan', async () => {
+    // Add a test plan
+    testRepository.create({
+      title: 'Test Plan',
+      date: '2026-10-05',
+      description: 'Test description',
+      time: '14:30',
+    });
+
+    const store = usePlanStore();
+    store.loadPlans();
+
+    const wrapper = mount(PlansList, {
+      global: {
+        plugins: [router],
+        stubs: {
+          PlanCard: true, // Stub PlanCard to test rendering
+        },
+      },
+    });
+
+    await wrapper.vm.$nextTick();
+
+    // Should render PlanCard component
+    expect(wrapper.findComponent(PlanCard).exists()).toBe(true);
+  });
+
+  it('shows success message when plan is deleted', async () => {
+    // Add a test plan
+    testRepository.create({
+      title: 'Delete Me',
+      date: '2026-10-05',
+    });
+
+    const store = usePlanStore();
+    store.loadPlans();
+
+    const wrapper = mount(PlansList, {
+      global: {
+        plugins: [router],
+      },
+    });
+
+    await wrapper.vm.$nextTick();
+
+    // Find the PlanCard and trigger delete
+    const planCard = wrapper.findComponent(PlanCard);
+    expect(planCard.exists()).toBe(true);
+
+    // Trigger delete from PlanCard - we'll simulate the emitted event
+    await planCard.vm.$emit('delete', 'delete-me-id');
+
+    // Should show success message briefly
+    expect(wrapper.text()).toContain('Plan deleted successfully');
   });
 });
