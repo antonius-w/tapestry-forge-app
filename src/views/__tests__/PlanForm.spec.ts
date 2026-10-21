@@ -129,9 +129,9 @@ describe('PlanForm', () => {
       },
     });
 
-    const cancelButton = wrapper.find('button.secondary');
-    expect(cancelButton.exists()).toBe(true);
-    expect(cancelButton.text()).toContain('Cancel');
+    const buttons = wrapper.findAll('button');
+    const cancelButton = buttons.find((b) => b.text() === 'Cancel');
+    expect(cancelButton).toBeTruthy();
   });
 
   it('creates new plan when form is submitted with valid data', async () => {
@@ -224,8 +224,9 @@ describe('PlanForm', () => {
       const stepTitleInput = wrapper.find('.step-editor input[type="text"]');
       await stepTitleInput.setValue('First step');
 
-      const saveButton = wrapper.find('.step-editor button.primary');
-      await saveButton.trigger('click');
+      const stepEditorButtons = wrapper.find('.step-editor').findAll('button');
+      const saveButton = stepEditorButtons.find((b) => b.text() === 'Add Step');
+      await saveButton!.trigger('click');
 
       expect(wrapper.find('.step-list').exists()).toBe(true);
       expect(wrapper.text()).toContain('First step');
@@ -247,12 +248,13 @@ describe('PlanForm', () => {
       const stepTitleInput = wrapper.find('.step-editor input[type="text"]');
       await stepTitleInput.setValue('Step to delete');
 
-      const saveButton = wrapper.find('.step-editor button.primary');
-      await saveButton.trigger('click');
+      const stepEditorButtons = wrapper.find('.step-editor').findAll('button');
+      const saveButton = stepEditorButtons.find((b) => b.text() === 'Add Step');
+      await saveButton!.trigger('click');
 
       expect(wrapper.text()).toContain('Step to delete');
 
-      const deleteButton = wrapper.find('.step-item .action-button.delete');
+      const deleteButton = wrapper.find('.step-item button.delete');
       await deleteButton.trigger('click');
 
       expect(wrapper.text()).not.toContain('Step to delete');
@@ -281,8 +283,9 @@ describe('PlanForm', () => {
       const stepTitleInput = wrapper.find('.step-editor input[type="text"]');
       await stepTitleInput.setValue('Step one');
 
-      const saveButton = wrapper.find('.step-editor button.primary');
-      await saveButton.trigger('click');
+      const stepEditorButtons = wrapper.find('.step-editor').findAll('button');
+      const saveButton = stepEditorButtons.find((b) => b.text() === 'Add Step');
+      await saveButton!.trigger('click');
 
       const form = wrapper.find('form');
       await form.trigger('submit.prevent');
@@ -384,14 +387,15 @@ describe('PlanForm', () => {
 
       await wrapper.vm.$nextTick();
 
-      const editButton = wrapper.find('.step-item .action-button.edit');
+      const editButton = wrapper.find('.step-item button.edit');
       await editButton.trigger('click');
 
       const stepTitleInput = wrapper.find('.step-editor input[type="text"]');
       await stepTitleInput.setValue('Updated step');
 
-      const saveButton = wrapper.find('.step-editor button.primary');
-      await saveButton.trigger('click');
+      const stepEditorButtons = wrapper.find('.step-editor').findAll('button');
+      const saveButton = stepEditorButtons.find((b) => b.text() === 'Save Step');
+      await saveButton!.trigger('click');
 
       expect(wrapper.text()).toContain('Updated step');
 
@@ -419,20 +423,22 @@ describe('PlanForm', () => {
       await addButton.trigger('click');
       let stepTitleInput = wrapper.find('.step-editor input[type="text"]');
       await stepTitleInput.setValue('Step A');
-      let saveButton = wrapper.find('.step-editor button.primary');
-      await saveButton.trigger('click');
+      let stepEditorButtons = wrapper.find('.step-editor').findAll('button');
+      let saveButton = stepEditorButtons.find((b) => b.text() === 'Add Step');
+      await saveButton!.trigger('click');
 
       await addButton.trigger('click');
       stepTitleInput = wrapper.find('.step-editor input[type="text"]');
       await stepTitleInput.setValue('Step B');
-      saveButton = wrapper.find('.step-editor button.primary');
-      await saveButton.trigger('click');
+      stepEditorButtons = wrapper.find('.step-editor').findAll('button');
+      saveButton = stepEditorButtons.find((b) => b.text() === 'Add Step');
+      await saveButton!.trigger('click');
 
       const items = wrapper.findAll('.step-item');
       expect(items[0]?.text()).toContain('Step A');
       expect(items[1]?.text()).toContain('Step B');
 
-      const moveDownButton = items[0]?.findAll('.action-button')[1];
+      const moveDownButton = items[0]?.findAll('button')[1];
       await moveDownButton?.trigger('click');
 
       const reorderedItems = wrapper.findAll('.step-item');

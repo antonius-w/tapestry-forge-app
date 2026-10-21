@@ -8,6 +8,10 @@ import type { PlanFormData, StepFormData } from '@/models/form-data';
 import type { Step } from '@/models/step';
 import StepEditor from '@/components/plans/StepEditor.vue';
 import StepList from '@/components/plans/StepList.vue';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 
 const router = useRouter();
 const route = useRoute();
@@ -264,36 +268,36 @@ onMounted(() => {
 
     <form @submit.prevent="submitForm" class="form">
       <div class="field">
-        <label for="title"> Title * </label>
-        <input id="title" v-model="formData.title" type="text" placeholder="Enter plan title" />
+        <Label for="title"> Title * </Label>
+        <Input id="title" v-model="formData.title" type="text" placeholder="Enter plan title" />
       </div>
 
       <div class="field">
-        <label for="description"> Description </label>
-        <textarea
+        <Label for="description"> Description </Label>
+        <Textarea
           id="description"
           v-model="formData.description"
-          rows="3"
+          :rows="3"
           placeholder="Enter plan description (optional)"
         />
       </div>
 
       <div class="field">
-        <label for="date"> Date * </label>
-        <input id="date" v-model="formData.date" type="date" />
+        <Label for="date"> Date * </Label>
+        <Input id="date" v-model="formData.date" type="date" />
       </div>
 
       <div class="field">
-        <label for="time"> Time </label>
-        <input id="time" v-model="formData.time" type="time" />
+        <Label for="time"> Time </Label>
+        <Input id="time" v-model="formData.time" type="time" />
       </div>
 
       <!-- Steps section (collapsible, progressive complexity) -->
       <div class="steps-section">
-        <button type="button" class="steps-toggle" @click="toggleSteps">
+        <Button type="button" variant="ghost" class="steps-toggle" @click="toggleSteps">
           <span class="toggle-icon">{{ stepsExpanded ? '▼' : '▶' }}</span>
           {{ stepsToggleText }}
-        </button>
+        </Button>
 
         <div v-if="stepsExpanded" class="steps-content">
           <StepList
@@ -314,9 +318,15 @@ onMounted(() => {
             @cancel="handleStepCancel"
           />
 
-          <button v-else type="button" class="add-step-button" @click="handleAddStepClick">
+          <Button
+            v-else
+            type="button"
+            variant="outline"
+            class="add-step-button"
+            @click="handleAddStepClick"
+          >
             + Add step
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -326,10 +336,10 @@ onMounted(() => {
       </div>
 
       <div class="buttons">
-        <button type="submit" :disabled="isCreating || isUpdating" class="primary">
+        <Button type="submit" :disabled="isCreating || isUpdating">
           {{ submitButtonText }}
-        </button>
-        <button type="button" @click="handleCancel" class="secondary">Cancel</button>
+        </Button>
+        <Button type="button" variant="secondary" @click="handleCancel">Cancel</Button>
       </div>
     </form>
   </div>
@@ -354,44 +364,9 @@ onMounted(() => {
 
 .field {
   margin-bottom: 1rem;
-}
-
-.field label {
-  display: block;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #374151;
-  margin-bottom: 0.25rem;
-}
-
-.field input,
-.field textarea {
-  width: 100%;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.25rem;
-  font-size: 1rem;
-  transition:
-    border-color 0.2s,
-    box-shadow 0.2s;
-}
-
-.field input:focus,
-.field textarea:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
-}
-
-.field input:required:invalid,
-.field textarea:required:invalid {
-  border-color: #ef4444;
-}
-
-.field input:focus:invalid,
-.field textarea:focus:invalid {
-  border-color: #ef4444;
-  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .steps-section {
@@ -403,18 +378,11 @@ onMounted(() => {
 
 .steps-toggle {
   width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.625rem 0.75rem;
+  justify-content: flex-start;
+  border-radius: 0;
   background-color: #f9fafb;
-  border: none;
-  font-size: 0.875rem;
-  font-weight: 500;
   color: #374151;
-  cursor: pointer;
-  text-align: left;
-  transition: background-color 0.2s;
+  font-weight: 500;
 }
 
 .steps-toggle:hover {
@@ -442,16 +410,8 @@ onMounted(() => {
 }
 
 .add-step-button {
-  padding: 0.5rem 0.75rem;
-  background: none;
-  border: 1px dashed #d1d5db;
-  border-radius: 0.375rem;
+  border-style: dashed;
   color: #3b82f6;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition:
-    border-color 0.2s,
-    background-color 0.2s;
 }
 
 .add-step-button:hover {
@@ -472,40 +432,5 @@ onMounted(() => {
   display: flex;
   gap: 1rem;
   margin-top: 1rem;
-}
-
-.primary,
-.secondary {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 0.25rem;
-  font-size: 1rem;
-  cursor: pointer;
-  transition:
-    background-color 0.2s,
-    opacity 0.2s;
-}
-
-.primary {
-  background-color: #3b82f6;
-  color: white;
-}
-
-.primary:hover:not(:disabled) {
-  background-color: #2563eb;
-}
-
-.primary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.secondary {
-  background-color: #e5e7eb;
-  color: #374151;
-}
-
-.secondary:hover {
-  background-color: #d1d5db;
 }
 </style>

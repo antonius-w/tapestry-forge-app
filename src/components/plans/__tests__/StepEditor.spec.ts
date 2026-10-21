@@ -39,13 +39,14 @@ describe('StepEditor', () => {
   it('disables submit button when title is empty', async () => {
     const wrapper = mount(StepEditor);
 
-    const submitButton = wrapper.find('button.primary');
-    expect(submitButton.attributes('disabled')).toBeDefined();
+    const buttons = wrapper.findAll('button');
+    const submitButton = buttons.find((b) => b.text() === 'Add Step');
+    expect(submitButton?.attributes('disabled')).toBeDefined();
 
     const titleInput = wrapper.find('input[type="text"]');
     await titleInput.setValue('Some title');
 
-    expect(submitButton.attributes('disabled')).toBeUndefined();
+    expect(submitButton?.attributes('disabled')).toBeUndefined();
   });
 
   it('emits save event with form data when submitted', async () => {
@@ -57,8 +58,9 @@ describe('StepEditor', () => {
     await titleInput.setValue('New step title');
     await descriptionInput.setValue('New step description');
 
-    const submitButton = wrapper.find('button.primary');
-    await submitButton.trigger('click');
+    const buttons = wrapper.findAll('button');
+    const submitButton = buttons.find((b) => b.text() === 'Add Step');
+    await submitButton!.trigger('click');
 
     expect(wrapper.emitted('save')).toBeTruthy();
 
@@ -76,8 +78,9 @@ describe('StepEditor', () => {
     const titleInput = wrapper.find('input[type="text"]');
     await titleInput.setValue('Step without description');
 
-    const submitButton = wrapper.find('button.primary');
-    await submitButton.trigger('click');
+    const buttons = wrapper.findAll('button');
+    const submitButton = buttons.find((b) => b.text() === 'Add Step');
+    await submitButton!.trigger('click');
 
     const saveEvents = wrapper.emitted('save');
     expect(saveEvents?.[0]?.[0]).toMatchObject({
@@ -114,8 +117,9 @@ describe('StepEditor', () => {
     const titleInput = wrapper.find('input[type="text"]');
     await titleInput.setValue('Updated title');
 
-    const submitButton = wrapper.find('button.primary');
-    await submitButton.trigger('click');
+    const buttons = wrapper.findAll('button');
+    const submitButton = buttons.find((b) => b.text() === 'Save Step');
+    await submitButton!.trigger('click');
 
     const saveEvents = wrapper.emitted('save');
     expect(saveEvents?.[0]?.[0]).toMatchObject({

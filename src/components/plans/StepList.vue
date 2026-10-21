@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { Step } from '@/models/step';
+import { Button } from '@/components/ui/button';
+import { ChevronUp, ChevronDown, Pencil, X } from '@lucide/vue';
 
 const { steps } = defineProps<{
   steps: Step[];
@@ -51,40 +53,46 @@ function handleMoveDown(stepId: string): void {
       </div>
 
       <div class="step-actions">
-        <button
+        <Button
           type="button"
-          class="action-button"
+          variant="ghost"
+          size="icon-sm"
           :disabled="isFirst(step)"
           title="Move up"
           @click="handleMoveUp(step.id)"
         >
-          ↑
-        </button>
-        <button
+          <ChevronUp />
+        </Button>
+        <Button
           type="button"
-          class="action-button"
+          variant="ghost"
+          size="icon-sm"
           :disabled="isLast(step)"
           title="Move down"
           @click="handleMoveDown(step.id)"
         >
-          ↓
-        </button>
-        <button
+          <ChevronDown />
+        </Button>
+        <Button
           type="button"
-          class="action-button edit"
+          variant="ghost"
+          size="icon-sm"
+          class="edit"
           title="Edit step"
           @click="handleEdit(step.id)"
         >
-          ✎
-        </button>
-        <button
+          <Pencil />
+        </Button>
+        <Button
           type="button"
-          class="action-button delete"
+          variant="ghost"
+          size="icon-sm"
+          class="delete"
           title="Delete step"
           @click="handleDelete(step.id)"
         >
-          ×
-        </button>
+          <X />
+        </Button>
       </div>
     </div>
   </div>
@@ -140,36 +148,12 @@ function handleMoveDown(stepId: string): void {
   flex-shrink: 0;
 }
 
-.action-button {
-  background: none;
-  border: none;
-  font-size: 0.875rem;
-  color: #9ca3af;
-  cursor: pointer;
-  padding: 0.125rem 0.25rem;
-  line-height: 1;
-  border-radius: 0.25rem;
-  transition:
-    color 0.2s,
-    background-color 0.2s;
-}
-
-.action-button:hover:not(:disabled) {
-  color: #374151;
-  background-color: #f3f4f6;
-}
-
-.action-button:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-
-.action-button.edit:hover:not(:disabled) {
+.step-actions :deep(.edit:hover) {
   color: #2563eb;
   background-color: #eff6ff;
 }
 
-.action-button.delete:hover:not(:disabled) {
+.step-actions :deep(.delete:hover) {
   color: #dc2626;
   background-color: #fee2e2;
 }

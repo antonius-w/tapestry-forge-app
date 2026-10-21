@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import type { StepFormData } from '@/models/form-data';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 
 const { step } = defineProps<{
   step?: StepFormData;
@@ -67,8 +71,8 @@ watch(
   <div class="step-editor">
     <div class="form" @keydown="handleKeydown">
       <div class="field">
-        <label for="step-title"> Step title * </label>
-        <input
+        <Label for="step-title"> Step title * </Label>
+        <Input
           id="step-title"
           v-model="formData.title"
           type="text"
@@ -77,20 +81,20 @@ watch(
       </div>
 
       <div class="field">
-        <label for="step-description"> Description </label>
-        <textarea
+        <Label for="step-description"> Description </Label>
+        <Textarea
           id="step-description"
           v-model="formData.description"
-          rows="2"
+          :rows="2"
           placeholder="Enter step description (optional)"
         />
       </div>
 
       <div class="buttons">
-        <button type="button" :disabled="!isFormValid" class="primary" @click="handleSubmit">
+        <Button type="button" :disabled="!isFormValid" @click="handleSubmit">
           {{ submitButtonText }}
-        </button>
-        <button type="button" @click="handleCancel" class="secondary">Cancel</button>
+        </Button>
+        <Button type="button" variant="secondary" @click="handleCancel">Cancel</Button>
       </div>
     </div>
   </div>
@@ -110,71 +114,15 @@ watch(
   gap: 0.5rem;
 }
 
-.field label {
-  display: block;
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: #374151;
-  margin-bottom: 0.125rem;
-}
-
-.field input,
-.field textarea {
-  width: 100%;
-  padding: 0.375rem 0.5rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.25rem;
-  font-size: 0.875rem;
-  transition:
-    border-color 0.2s,
-    box-shadow 0.2s;
-}
-
-.field input:focus,
-.field textarea:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
 }
 
 .buttons {
   display: flex;
   gap: 0.5rem;
   margin-top: 0.25rem;
-}
-
-.primary,
-.secondary {
-  padding: 0.375rem 0.75rem;
-  border: none;
-  border-radius: 0.25rem;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition:
-    background-color 0.2s,
-    opacity 0.2s;
-}
-
-.primary {
-  background-color: #3b82f6;
-  color: white;
-}
-
-.primary:hover:not(:disabled) {
-  background-color: #2563eb;
-}
-
-.primary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.secondary {
-  background-color: #e5e7eb;
-  color: #374151;
-}
-
-.secondary:hover {
-  background-color: #d1d5db;
 }
 </style>
