@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import type { Step } from '@/models/step';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { ChevronUp, ChevronDown, Pencil, X } from '@lucide/vue';
 
 const { steps } = defineProps<{
@@ -13,6 +14,7 @@ const emit = defineEmits<{
   (e: 'delete', stepId: string): void;
   (e: 'move-up', stepId: string): void;
   (e: 'move-down', stepId: string): void;
+  (e: 'toggle-complete', stepId: string): void;
 }>();
 
 const sortedSteps = computed(() => steps.toSorted((a: Step, b: Step) => a.order - b.order));
@@ -40,11 +42,27 @@ function handleMoveUp(stepId: string): void {
 function handleMoveDown(stepId: string): void {
   emit('move-down', stepId);
 }
+
+function handleToggleComplete(stepId: string): void {
+  emit('toggle-complete', stepId);
+}
 </script>
 
 <template>
   <div class="step-list">
-    <div v-for="step in sortedSteps" :key="step.id" class="step-item">
+    <div
+      v-for="step in sortedSteps"
+      :key="step.id"
+      class="step-item"
+      :class="{ completed: step.completed }"
+    >
+      <Checkbox
+        :model-value="step.completed ?? false"
+        class="step-checkbox"
+        :aria-label="`Mark '${step.title}' as ${step.completed ? 'incomplete' : 'complete'}`"
+        @update:model-value="handleToggleComplete(step.id)"
+      />
+
       <span class="step-number">{{ step.order + 1 }}.</span>
 
       <div class="step-content">
@@ -115,6 +133,14 @@ function handleMoveDown(stepId: string): void {
   background-color: #ffffff;
 }
 
+.step-item.completed {
+  background-color: #f9fafb;
+}
+
+.step-checkbox {
+  margin-top: 0.125rem;
+}
+
 .step-number {
   font-size: 0.875rem;
   font-weight: 600;
@@ -136,10 +162,19 @@ function handleMoveDown(stepId: string): void {
   color: #111827;
 }
 
+.step-item.completed .step-title {
+  text-decoration: line-through;
+  color: #9ca3af;
+}
+
 .step-description {
   font-size: 0.75rem;
   color: #6b7280;
   line-height: 1.4;
+}
+
+.step-item.completed .step-description {
+  color: #9ca3af;
 }
 
 .step-actions {

@@ -445,4 +445,79 @@ describe('PlanRepository', () => {
       expect(foundExtended?.steps?.length).toBe(1);
     });
   });
+
+  describe('Step execution state', () => {
+    it('should persist and restore step completed state', () => {
+      const created = repository.create({
+        title: 'Plan with execution',
+        date: '2026-10-04',
+        steps: [
+          { id: 'step-1', title: 'Done step', order: 0, completed: true },
+          { id: 'step-2', title: 'Pending step', order: 1, completed: false },
+        ],
+      } as const);
+
+      const found = repository.getById(created.id);
+      expect(found?.steps?.[0]?.completed).toBe(true);
+      expect(found?.steps?.[1]?.completed).toBe(false);
+    });
+
+    it('should persist steps without completed as undefined', () => {
+      const created = repository.create({
+        title: 'Plan without execution state',
+        date: '2026-10-04',
+        steps: [{ id: 'step-1', title: 'Step', order: 0 }],
+      } as const);
+
+      const found = repository.getById(created.id);
+      expect(found?.steps?.[0]?.completed).toBeUndefined();
+    });
+
+    it('should update step completed state via plan update', () => {
+      const created = repository.create({
+        title: 'Plan',
+        date: '2026-10-04',
+        steps: [{ id: 'step-1', title: 'Step', order: 0 }],
+      } as const);
+
+      const updated = repository.update(created.id, {
+        steps: [{ id: 'step-1', title: 'Step', order: 0, completed: true }],
+      });
+
+      expect(updated?.steps?.[0]?.completed).toBe(true);
+
+      const found = repository.getById(created.id);
+      expect(found?.steps?.[0]?.completed).toBe(true);
+    });
+
+    it('should maintain backward compatibility with steps lacking completed field', () => {
+      const legacyData = [
+        {
+          id: 'legacy-plan',
+          title: 'Legacy Plan',
+          date: '2026-10-04',
+          steps: [{ id: 'legacy-step', title: 'Legacy step', order: 0 }],
+        },
+      ];
+      storage.setItem('tapestry-forge:plans', JSON.stringify(legacyData));
+
+      const plans = repository.getAll();
+      expect(plans).toHaveLength(1);
+      expect(plans[0]?.steps?.[0]?.completed).toBeUndefined();
+      expect(plans[0]?.steps?.[0]?.title).toBe('Legacy step');
+    });
+
+    it('should persist completed state across repository instances', () => {
+      const created = repository.create({
+        title: 'Plan',
+        date: '2026-10-04',
+        steps: [{ id: 'step-1', title: 'Step', order: 0, completed: true }],
+      } as const);
+
+      const newRepository = new PlanRepository(storage);
+      const found = newRepository.getById(created.id);
+
+      expect(found?.steps?.[0]?.completed).toBe(true);
+    });
+  });
 });

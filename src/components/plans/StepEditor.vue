@@ -61,6 +61,7 @@ watch(
       description: newStep.description ?? '',
       id: newStep.id,
       order: newStep.order,
+      completed: newStep.completed,
     };
   },
   { immediate: true },

@@ -68,6 +68,7 @@ const displaySteps = computed<Step[]>(() =>
     title: step.title,
     description: step.description,
     order: step.order ?? index,
+    completed: step.completed,
   })),
 );
 
@@ -79,6 +80,7 @@ function buildSteps(): Step[] | undefined {
     title: step.title,
     description: step.description,
     order: index,
+    completed: step.completed,
   }));
 }
 
@@ -226,6 +228,14 @@ function handleMoveDown(stepId: string): void {
   steps.value[index] = { ...next, order: current.order };
 }
 
+function handleToggleComplete(stepId: string): void {
+  const step = steps.value.find((s) => s.id === stepId);
+
+  if (!step) return;
+
+  step.completed = !step.completed;
+}
+
 function loadStepsFromPlan(planSteps: Step[] | undefined): void {
   if (!planSteps || planSteps.length === 0) {
     steps.value = [];
@@ -237,6 +247,7 @@ function loadStepsFromPlan(planSteps: Step[] | undefined): void {
     title: step.title,
     description: step.description ?? '',
     order: step.order,
+    completed: step.completed,
   }));
 }
 
@@ -307,6 +318,7 @@ onMounted(() => {
             @delete="handleStepDelete"
             @move-up="handleMoveUp"
             @move-down="handleMoveDown"
+            @toggle-complete="handleToggleComplete"
           />
 
           <p v-else class="no-steps">No steps yet. Add steps to break this plan into actions.</p>
