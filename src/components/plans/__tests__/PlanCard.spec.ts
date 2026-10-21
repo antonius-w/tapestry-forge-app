@@ -233,4 +233,55 @@ describe('PlanCard', () => {
     expect(wrapper.find('button.confirm').exists()).toBe(true);
     expect(wrapper.text()).toContain('Are you sure you want to delete');
   });
+
+  it('does not show step badge when plan has no steps', () => {
+    const wrapper = mount(PlanCard, {
+      props: { plan: mockPlan },
+      global: {
+        plugins: [router],
+      },
+    });
+
+    expect(wrapper.find('.step-badge').exists()).toBe(false);
+  });
+
+  it('shows step count badge when plan has steps', () => {
+    const planWithSteps: Plan = {
+      ...mockPlan,
+      steps: [
+        { id: 's1', title: 'Step 1', order: 0 },
+        { id: 's2', title: 'Step 2', order: 1 },
+        { id: 's3', title: 'Step 3', order: 2 },
+      ],
+    };
+
+    const wrapper = mount(PlanCard, {
+      props: { plan: planWithSteps },
+      global: {
+        plugins: [router],
+      },
+    });
+
+    const badge = wrapper.find('.step-badge');
+    expect(badge.exists()).toBe(true);
+    expect(badge.text()).toBe('3 steps');
+  });
+
+  it('shows singular step label for a single step', () => {
+    const planWithOneStep: Plan = {
+      ...mockPlan,
+      steps: [{ id: 's1', title: 'Only step', order: 0 }],
+    };
+
+    const wrapper = mount(PlanCard, {
+      props: { plan: planWithOneStep },
+      global: {
+        plugins: [router],
+      },
+    });
+
+    const badge = wrapper.find('.step-badge');
+    expect(badge.exists()).toBe(true);
+    expect(badge.text()).toBe('1 step');
+  });
 });
