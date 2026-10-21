@@ -161,4 +161,50 @@ describe('StepEditor', () => {
 
     expect(wrapper.find('input[type="text"]').element).toHaveProperty('value', '');
   });
+
+  it('preserves completed state in edit mode when saving', async () => {
+    const step: StepFormData = {
+      id: 'step-1',
+      title: 'Completed step',
+      description: '',
+      order: 0,
+      completed: true,
+    };
+
+    const wrapper = mount(StepEditor, {
+      props: { step },
+    });
+
+    const titleInput = wrapper.find('input[type="text"]');
+    await titleInput.setValue('Updated title');
+
+    const buttons = wrapper.findAll('button');
+    const submitButton = buttons.find((b) => b.text() === 'Save Step');
+    await submitButton!.trigger('click');
+
+    const saveEvents = wrapper.emitted('save');
+    expect(saveEvents?.[0]?.[0]).toMatchObject({
+      id: 'step-1',
+      order: 0,
+      title: 'Updated title',
+      completed: true,
+    });
+  });
+
+  it('does not include completed in save event for new steps', async () => {
+    const wrapper = mount(StepEditor);
+
+    const titleInput = wrapper.find('input[type="text"]');
+    await titleInput.setValue('New step');
+
+    const buttons = wrapper.findAll('button');
+    const submitButton = buttons.find((b) => b.text() === 'Add Step');
+    await submitButton!.trigger('click');
+
+    const saveEvents = wrapper.emitted('save');
+    expect(saveEvents?.[0]?.[0]).toMatchObject({
+      title: 'New step',
+    });
+    expect(saveEvents?.[0]?.[0]).not.toHaveProperty('completed');
+  });
 });

@@ -17,6 +17,7 @@ interface PlanPersistenceData {
     title: string;
     description?: string;
     order: number;
+    completed?: boolean;
   }>;
 }
 
@@ -133,6 +134,7 @@ export class PlanRepository {
           title: step.title,
           description: step.description,
           order: step.order,
+          completed: step.completed,
         }))
       : undefined;
 
@@ -156,6 +158,7 @@ export class PlanRepository {
           title: step.title,
           description: step.description,
           order: step.order,
+          completed: step.completed,
         }))
       : undefined;
 

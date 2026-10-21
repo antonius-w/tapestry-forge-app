@@ -438,12 +438,171 @@ describe('PlanForm', () => {
       expect(items[0]?.text()).toContain('Step A');
       expect(items[1]?.text()).toContain('Step B');
 
-      const moveDownButton = items[0]?.findAll('button')[1];
+      const moveDownButton = items[0]?.find('.step-actions button[title="Move down"]');
       await moveDownButton?.trigger('click');
 
       const reorderedItems = wrapper.findAll('.step-item');
       expect(reorderedItems[0]?.text()).toContain('Step B');
       expect(reorderedItems[1]?.text()).toContain('Step A');
+    });
+
+    it('toggles step completion when checkbox is clicked', async () => {
+      const wrapper = mount(PlanForm, {
+        global: {
+          plugins: [router],
+        },
+      });
+
+      const stepsToggle = wrapper.find('.steps-toggle');
+      await stepsToggle.trigger('click');
+
+      const addButton = wrapper.find('.add-step-button');
+      await addButton.trigger('click');
+
+      const stepTitleInput = wrapper.find('.step-editor input[type="text"]');
+      await stepTitleInput.setValue('Step to complete');
+
+      const stepEditorButtons = wrapper.find('.step-editor').findAll('button');
+      const saveButton = stepEditorButtons.find((b) => b.text() === 'Add Step');
+      await saveButton!.trigger('click');
+
+      const stepItem = wrapper.find('.step-item');
+      expect(stepItem.classes()).not.toContain('completed');
+
+      const checkbox = wrapper.find('.step-checkbox');
+      await checkbox.trigger('click');
+
+      const updatedItem = wrapper.find('.step-item');
+      expect(updatedItem.classes()).toContain('completed');
+    });
+
+    it('toggles step completion back to incomplete', async () => {
+      const wrapper = mount(PlanForm, {
+        global: {
+          plugins: [router],
+        },
+      });
+
+      const stepsToggle = wrapper.find('.steps-toggle');
+      await stepsToggle.trigger('click');
+
+      const addButton = wrapper.find('.add-step-button');
+      await addButton.trigger('click');
+
+      const stepTitleInput = wrapper.find('.step-editor input[type="text"]');
+      await stepTitleInput.setValue('Toggle step');
+
+      const stepEditorButtons = wrapper.find('.step-editor').findAll('button');
+      const saveButton = stepEditorButtons.find((b) => b.text() === 'Add Step');
+      await saveButton!.trigger('click');
+
+      const checkbox = wrapper.find('.step-checkbox');
+      await checkbox.trigger('click');
+      expect(wrapper.find('.step-item').classes()).toContain('completed');
+
+      const checkboxAgain = wrapper.find('.step-checkbox');
+      await checkboxAgain.trigger('click');
+      expect(wrapper.find('.step-item').classes()).not.toContain('completed');
+    });
+
+    it('saves step completion state with the plan on submit', async () => {
+      const wrapper = mount(PlanForm, {
+        global: {
+          plugins: [router],
+        },
+      });
+
+      const titleInput = wrapper.find('input[type="text"]');
+      const dateInput = wrapper.find('input[type="date"]');
+
+      await titleInput.setValue('Plan with completion');
+      await dateInput.setValue('2026-12-01');
+
+      const stepsToggle = wrapper.find('.steps-toggle');
+      await stepsToggle.trigger('click');
+
+      const addButton = wrapper.find('.add-step-button');
+      await addButton.trigger('click');
+
+      const stepTitleInput = wrapper.find('.step-editor input[type="text"]');
+      await stepTitleInput.setValue('Step one');
+
+      const stepEditorButtons = wrapper.find('.step-editor').findAll('button');
+      const saveButton = stepEditorButtons.find((b) => b.text() === 'Add Step');
+      await saveButton!.trigger('click');
+
+      const checkbox = wrapper.find('.step-checkbox');
+      await checkbox.trigger('click');
+
+      const form = wrapper.find('form');
+      await form.trigger('submit.prevent');
+
+      const allPlans = testRepository.getAll();
+      expect(allPlans).toHaveLength(1);
+      expect(allPlans[0]!.steps).toHaveLength(1);
+      expect(allPlans[0]!.steps![0]!.completed).toBe(true);
+    });
+
+    it('loads step completion state when editing a plan', async () => {
+      const existingPlan = testRepository.create({
+        title: 'Plan with completed step',
+        date: '2026-12-01',
+        steps: [
+          { id: 's1', title: 'Done step', order: 0, completed: true },
+          { id: 's2', title: 'Pending step', order: 1 },
+        ],
+      });
+
+      await router.push(`/plans/${existingPlan.id}/edit`);
+      await router.isReady();
+
+      const wrapper = mount(PlanForm, {
+        global: {
+          plugins: [router],
+        },
+      });
+
+      await wrapper.vm.$nextTick();
+
+      const items = wrapper.findAll('.step-item');
+      expect(items[0]?.classes()).toContain('completed');
+      expect(items[1]?.classes()).not.toContain('completed');
+    });
+
+    it('preserves completion state when editing a step', async () => {
+      const existingPlan = testRepository.create({
+        title: 'Plan with completed step',
+        date: '2026-12-01',
+        steps: [{ id: 's1', title: 'Done step', order: 0, completed: true }],
+      });
+
+      await router.push(`/plans/${existingPlan.id}/edit`);
+      await router.isReady();
+
+      const wrapper = mount(PlanForm, {
+        global: {
+          plugins: [router],
+        },
+      });
+
+      await wrapper.vm.$nextTick();
+
+      const editButton = wrapper.find('.step-item button.edit');
+      await editButton.trigger('click');
+
+      const stepTitleInput = wrapper.find('.step-editor input[type="text"]');
+      await stepTitleInput.setValue('Updated title');
+
+      const stepEditorButtons = wrapper.find('.step-editor').findAll('button');
+      const saveButton = stepEditorButtons.find((b) => b.text() === 'Save Step');
+      await saveButton!.trigger('click');
+
+      const form = wrapper.find('form');
+      await form.trigger('submit.prevent');
+
+      const updatedPlan = testRepository.getById(existingPlan.id);
+      expect(updatedPlan?.steps![0]!.title).toBe('Updated title');
+      expect(updatedPlan?.steps![0]!.completed).toBe(true);
     });
   });
 });
