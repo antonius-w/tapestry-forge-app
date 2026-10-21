@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { usePlanStore } from '@/stores/plan-store';
 import { storeToRefs } from 'pinia';
 import type { Plan } from '@/models/plan';
@@ -7,6 +7,14 @@ import type { Plan } from '@/models/plan';
 const { plan } = defineProps<{
   plan: Plan;
 }>();
+
+const stepCount = computed(() => plan.steps?.length ?? 0);
+
+const stepCountLabel = computed(() => {
+  const count = stepCount.value;
+
+  return count === 1 ? '1 step' : `${count} steps`;
+});
 
 const emit = defineEmits<{
   (e: 'edit', id: string): void;
@@ -52,6 +60,7 @@ async function handleDelete(): Promise<void> {
       <div class="date-time">
         <span class="date">{{ plan.date }}</span>
         <span v-if="plan.time" class="time">at {{ plan.time }}</span>
+        <span v-if="stepCount > 0" class="step-badge">{{ stepCountLabel }}</span>
       </div>
     </div>
 
@@ -139,6 +148,16 @@ async function handleDelete(): Promise<void> {
 
 .time {
   margin-left: 0.5rem;
+}
+
+.step-badge {
+  margin-left: 0.5rem;
+  padding: 0.125rem 0.5rem;
+  background-color: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 9999px;
 }
 
 .actions {

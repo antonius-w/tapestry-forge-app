@@ -5,6 +5,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import PlanForm from '@/views/plans/PlanForm.vue';
 import { usePlanStore } from '@/stores/plan-store';
 import { PlanRepository } from '@/repositories/plan-repository';
+import { RouteName } from '@/router/route-names';
 
 /**
  * In-memory storage implementation for testing.
@@ -44,19 +45,23 @@ describe('PlanForm', () => {
   const router = createRouter({
     history: createWebHistory(),
     routes: [
-      { path: '/plans', component: { template: '<div>Plans List</div>' } },
-      { path: '/plans/new', component: PlanForm },
-      { path: '/plans/:id/edit', component: PlanForm },
+      { path: '/', redirect: '/plans' },
+      { path: '/plans', name: RouteName.plans, component: { template: '<div>Plans List</div>' } },
+      { path: '/plans/new', name: RouteName.plansNew, component: PlanForm },
+      { path: '/plans/:id/edit', name: RouteName.plansEdit, component: PlanForm },
     ],
   });
 
-  beforeEach(() => {
+  beforeEach(async () => {
     setActivePinia(createPinia());
     testStorage = new InMemoryStorage();
     testRepository = new PlanRepository(testStorage);
 
     const store = usePlanStore();
     store.setRepository(testRepository);
+
+    await router.push({ name: RouteName.plansNew });
+    await router.isReady();
   });
 
   it('mounts correctly for create mode', () => {
@@ -124,9 +129,9 @@ describe('PlanForm', () => {
       },
     });
 
-    const buttons = wrapper.findAll('button');
-    expect(buttons.length).toBeGreaterThanOrEqual(2);
-    expect(buttons[1]?.text()).toContain('Cancel');
+    const cancelButton = wrapper.find('button.secondary');
+    expect(cancelButton.exists()).toBe(true);
+    expect(cancelButton.text()).toContain('Cancel');
   });
 
   it('creates new plan when form is submitted with valid data', async () => {
@@ -157,5 +162,282 @@ describe('PlanForm', () => {
     expect(allPlans[0]!.description).toBe('New description');
     expect(allPlans[0]!.date).toBe('2026-12-01');
     expect(allPlans[0]!.time).toBe('15:30');
+  });
+
+  describe('step management', () => {
+    it('shows steps section collapsed by default', () => {
+      const wrapper = mount(PlanForm, {
+        global: {
+          plugins: [router],
+        },
+      });
+
+      const stepsToggle = wrapper.find('.steps-toggle');
+      expect(stepsToggle.exists()).toBe(true);
+      expect(stepsToggle.text()).toContain('Add steps');
+      expect(wrapper.find('.steps-content').exists()).toBe(false);
+    });
+
+    it('expands steps section when toggle is clicked', async () => {
+      const wrapper = mount(PlanForm, {
+        global: {
+          plugins: [router],
+        },
+      });
+
+      const stepsToggle = wrapper.find('.steps-toggle');
+      await stepsToggle.trigger('click');
+
+      expect(wrapper.find('.steps-content').exists()).toBe(true);
+      expect(wrapper.text()).toContain('No steps yet');
+    });
+
+    it('shows step editor when add step button is clicked', async () => {
+      const wrapper = mount(PlanForm, {
+        global: {
+          plugins: [router],
+        },
+      });
+
+      const stepsToggle = wrapper.find('.steps-toggle');
+      await stepsToggle.trigger('click');
+
+      const addButton = wrapper.find('.add-step-button');
+      await addButton.trigger('click');
+
+      expect(wrapper.find('.step-editor').exists()).toBe(true);
+    });
+
+    it('adds a step when step editor saves', async () => {
+      const wrapper = mount(PlanForm, {
+        global: {
+          plugins: [router],
+        },
+      });
+
+      const stepsToggle = wrapper.find('.steps-toggle');
+      await stepsToggle.trigger('click');
+
+      const addButton = wrapper.find('.add-step-button');
+      await addButton.trigger('click');
+
+      const stepTitleInput = wrapper.find('.step-editor input[type="text"]');
+      await stepTitleInput.setValue('First step');
+
+      const saveButton = wrapper.find('.step-editor button.primary');
+      await saveButton.trigger('click');
+
+      expect(wrapper.find('.step-list').exists()).toBe(true);
+      expect(wrapper.text()).toContain('First step');
+    });
+
+    it('deletes a step when delete is triggered', async () => {
+      const wrapper = mount(PlanForm, {
+        global: {
+          plugins: [router],
+        },
+      });
+
+      const stepsToggle = wrapper.find('.steps-toggle');
+      await stepsToggle.trigger('click');
+
+      const addButton = wrapper.find('.add-step-button');
+      await addButton.trigger('click');
+
+      const stepTitleInput = wrapper.find('.step-editor input[type="text"]');
+      await stepTitleInput.setValue('Step to delete');
+
+      const saveButton = wrapper.find('.step-editor button.primary');
+      await saveButton.trigger('click');
+
+      expect(wrapper.text()).toContain('Step to delete');
+
+      const deleteButton = wrapper.find('.step-item .action-button.delete');
+      await deleteButton.trigger('click');
+
+      expect(wrapper.text()).not.toContain('Step to delete');
+      expect(wrapper.text()).toContain('No steps yet');
+    });
+
+    it('saves steps with the plan on submit', async () => {
+      const wrapper = mount(PlanForm, {
+        global: {
+          plugins: [router],
+        },
+      });
+
+      const titleInput = wrapper.find('input[type="text"]');
+      const dateInput = wrapper.find('input[type="date"]');
+
+      await titleInput.setValue('Plan with steps');
+      await dateInput.setValue('2026-12-01');
+
+      const stepsToggle = wrapper.find('.steps-toggle');
+      await stepsToggle.trigger('click');
+
+      const addButton = wrapper.find('.add-step-button');
+      await addButton.trigger('click');
+
+      const stepTitleInput = wrapper.find('.step-editor input[type="text"]');
+      await stepTitleInput.setValue('Step one');
+
+      const saveButton = wrapper.find('.step-editor button.primary');
+      await saveButton.trigger('click');
+
+      const form = wrapper.find('form');
+      await form.trigger('submit.prevent');
+
+      const allPlans = testRepository.getAll();
+      expect(allPlans).toHaveLength(1);
+      expect(allPlans[0]!.steps).toBeDefined();
+      expect(allPlans[0]!.steps).toHaveLength(1);
+      expect(allPlans[0]!.steps![0]!.title).toBe('Step one');
+      expect(allPlans[0]!.steps![0]!.order).toBe(0);
+    });
+
+    it('creates plan without steps when no steps are added', async () => {
+      const wrapper = mount(PlanForm, {
+        global: {
+          plugins: [router],
+        },
+      });
+
+      const titleInput = wrapper.find('input[type="text"]');
+      const dateInput = wrapper.find('input[type="date"]');
+
+      await titleInput.setValue('Simple plan');
+      await dateInput.setValue('2026-12-01');
+
+      const form = wrapper.find('form');
+      await form.trigger('submit.prevent');
+
+      const allPlans = testRepository.getAll();
+      expect(allPlans).toHaveLength(1);
+      expect(allPlans[0]!.steps).toBeUndefined();
+    });
+
+    it('loads existing steps when editing a plan', async () => {
+      const existingPlan = testRepository.create({
+        title: 'Existing plan',
+        date: '2026-12-01',
+        steps: [
+          { id: 's1', title: 'Existing step 1', order: 0 },
+          { id: 's2', title: 'Existing step 2', description: 'Has description', order: 1 },
+        ],
+      });
+
+      await router.push(`/plans/${existingPlan.id}/edit`);
+      await router.isReady();
+
+      const wrapper = mount(PlanForm, {
+        global: {
+          plugins: [router],
+        },
+      });
+
+      await wrapper.vm.$nextTick();
+
+      expect(wrapper.find('.steps-content').exists()).toBe(true);
+      expect(wrapper.text()).toContain('Existing step 1');
+      expect(wrapper.text()).toContain('Existing step 2');
+      expect(wrapper.text()).toContain('Has description');
+    });
+
+    it('auto-expands steps section when editing a plan with steps', async () => {
+      const existingPlan = testRepository.create({
+        title: 'Plan with steps',
+        date: '2026-12-01',
+        steps: [{ id: 's1', title: 'A step', order: 0 }],
+      });
+
+      await router.push(`/plans/${existingPlan.id}/edit`);
+      await router.isReady();
+
+      const wrapper = mount(PlanForm, {
+        global: {
+          plugins: [router],
+        },
+      });
+
+      await wrapper.vm.$nextTick();
+
+      const stepsToggle = wrapper.find('.steps-toggle');
+      expect(stepsToggle.text()).toContain('Steps (1)');
+      expect(wrapper.find('.steps-content').exists()).toBe(true);
+    });
+
+    it('updates steps when editing an existing plan', async () => {
+      const existingPlan = testRepository.create({
+        title: 'Plan to update',
+        date: '2026-12-01',
+        steps: [{ id: 's1', title: 'Original step', order: 0 }],
+      });
+
+      await router.push(`/plans/${existingPlan.id}/edit`);
+      await router.isReady();
+
+      const wrapper = mount(PlanForm, {
+        global: {
+          plugins: [router],
+        },
+      });
+
+      await wrapper.vm.$nextTick();
+
+      const editButton = wrapper.find('.step-item .action-button.edit');
+      await editButton.trigger('click');
+
+      const stepTitleInput = wrapper.find('.step-editor input[type="text"]');
+      await stepTitleInput.setValue('Updated step');
+
+      const saveButton = wrapper.find('.step-editor button.primary');
+      await saveButton.trigger('click');
+
+      expect(wrapper.text()).toContain('Updated step');
+
+      const form = wrapper.find('form');
+      await form.trigger('submit.prevent');
+
+      const updatedPlan = testRepository.getById(existingPlan.id);
+      expect(updatedPlan?.steps).toHaveLength(1);
+      expect(updatedPlan?.steps![0]!.title).toBe('Updated step');
+      expect(updatedPlan?.steps![0]!.id).toBe('s1');
+    });
+
+    it('moves steps up and down', async () => {
+      const wrapper = mount(PlanForm, {
+        global: {
+          plugins: [router],
+        },
+      });
+
+      const stepsToggle = wrapper.find('.steps-toggle');
+      await stepsToggle.trigger('click');
+
+      const addButton = wrapper.find('.add-step-button');
+
+      await addButton.trigger('click');
+      let stepTitleInput = wrapper.find('.step-editor input[type="text"]');
+      await stepTitleInput.setValue('Step A');
+      let saveButton = wrapper.find('.step-editor button.primary');
+      await saveButton.trigger('click');
+
+      await addButton.trigger('click');
+      stepTitleInput = wrapper.find('.step-editor input[type="text"]');
+      await stepTitleInput.setValue('Step B');
+      saveButton = wrapper.find('.step-editor button.primary');
+      await saveButton.trigger('click');
+
+      const items = wrapper.findAll('.step-item');
+      expect(items[0]?.text()).toContain('Step A');
+      expect(items[1]?.text()).toContain('Step B');
+
+      const moveDownButton = items[0]?.findAll('.action-button')[1];
+      await moveDownButton?.trigger('click');
+
+      const reorderedItems = wrapper.findAll('.step-item');
+      expect(reorderedItems[0]?.text()).toContain('Step B');
+      expect(reorderedItems[1]?.text()).toContain('Step A');
+    });
   });
 });

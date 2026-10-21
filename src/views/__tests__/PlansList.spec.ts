@@ -46,6 +46,7 @@ describe('PlansList', () => {
   const router = createRouter({
     history: createWebHistory(),
     routes: [
+      { path: '/', redirect: '/plans' },
       { path: '/plans', component: PlansList },
       { path: '/plans/new', component: { template: '<div>Create Plan</div>' } },
       { path: '/plans/:id/edit', component: { template: '<div>Edit Plan</div>' } },
