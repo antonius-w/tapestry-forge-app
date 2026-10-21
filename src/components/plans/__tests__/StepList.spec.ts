@@ -102,8 +102,7 @@ describe('StepList', () => {
     });
 
     const items = wrapper.findAll('.step-item');
-    const moveUpButtons = items[1]?.findAll('button');
-    const upButton = moveUpButtons?.[0];
+    const upButton = items[1]?.find('.step-actions button[title="Move up"]');
 
     await upButton?.trigger('click');
 
@@ -117,8 +116,7 @@ describe('StepList', () => {
     });
 
     const items = wrapper.findAll('.step-item');
-    const moveDownButtons = items[0]?.findAll('button');
-    const downButton = moveDownButtons?.[1];
+    const downButton = items[0]?.find('.step-actions button[title="Move down"]');
 
     await downButton?.trigger('click');
 
@@ -132,8 +130,7 @@ describe('StepList', () => {
     });
 
     const items = wrapper.findAll('.step-item');
-    const firstItemButtons = items[0]?.findAll('button');
-    const upButton = firstItemButtons?.[0];
+    const upButton = items[0]?.find('.step-actions button[title="Move up"]');
 
     expect(upButton?.attributes('disabled')).toBeDefined();
   });
@@ -144,8 +141,7 @@ describe('StepList', () => {
     });
 
     const items = wrapper.findAll('.step-item');
-    const lastItemButtons = items[2]?.findAll('button');
-    const downButton = lastItemButtons?.[1];
+    const downButton = items[2]?.find('.step-actions button[title="Move down"]');
 
     expect(downButton?.attributes('disabled')).toBeDefined();
   });
@@ -156,8 +152,7 @@ describe('StepList', () => {
     });
 
     const items = wrapper.findAll('.step-item');
-    const secondItemButtons = items[1]?.findAll('button');
-    const upButton = secondItemButtons?.[0];
+    const upButton = items[1]?.find('.step-actions button[title="Move up"]');
 
     expect(upButton?.attributes('disabled')).toBeUndefined();
   });
@@ -168,8 +163,7 @@ describe('StepList', () => {
     });
 
     const items = wrapper.findAll('.step-item');
-    const secondItemButtons = items[1]?.findAll('button');
-    const downButton = secondItemButtons?.[1];
+    const downButton = items[1]?.find('.step-actions button[title="Move down"]');
 
     expect(downButton?.attributes('disabled')).toBeUndefined();
   });
@@ -192,8 +186,91 @@ describe('StepList', () => {
     const items = wrapper.findAll('.step-item');
     expect(items).toHaveLength(1);
 
-    const buttons = items[0]?.findAll('button');
-    expect(buttons?.[0]?.attributes('disabled')).toBeDefined();
-    expect(buttons?.[1]?.attributes('disabled')).toBeDefined();
+    const upButton = items[0]?.find('.step-actions button[title="Move up"]');
+    const downButton = items[0]?.find('.step-actions button[title="Move down"]');
+    expect(upButton?.attributes('disabled')).toBeDefined();
+    expect(downButton?.attributes('disabled')).toBeDefined();
+  });
+
+  describe('execution state', () => {
+    it('renders a checkbox for each step', () => {
+      const wrapper = mount(StepList, {
+        props: { steps: createSteps() },
+      });
+
+      const checkboxes = wrapper.findAll('.step-checkbox');
+      expect(checkboxes).toHaveLength(3);
+    });
+
+    it('emits toggle-complete event when checkbox is clicked', async () => {
+      const wrapper = mount(StepList, {
+        props: { steps: createSteps() },
+      });
+
+      const checkbox = wrapper.find('.step-checkbox');
+      await checkbox.trigger('click');
+
+      expect(wrapper.emitted('toggle-complete')).toBeTruthy();
+      expect(wrapper.emitted('toggle-complete')?.[0]).toEqual(['step-1']);
+    });
+
+    it('emits toggle-complete with correct step id for each checkbox', async () => {
+      const wrapper = mount(StepList, {
+        props: { steps: createSteps() },
+      });
+
+      const checkboxes = wrapper.findAll('.step-checkbox');
+      await checkboxes[1]?.trigger('click');
+
+      expect(wrapper.emitted('toggle-complete')?.[0]).toEqual(['step-2']);
+    });
+
+    it('applies completed class to completed steps', () => {
+      const stepsWithCompleted: Step[] = [
+        { id: 'step-1', title: 'Done', order: 0, completed: true },
+        { id: 'step-2', title: 'Pending', order: 1 },
+      ];
+
+      const wrapper = mount(StepList, {
+        props: { steps: stepsWithCompleted },
+      });
+
+      const items = wrapper.findAll('.step-item');
+      expect(items[0]?.classes()).toContain('completed');
+      expect(items[1]?.classes()).not.toContain('completed');
+    });
+
+    it('does not apply completed class to steps without completed state', () => {
+      const wrapper = mount(StepList, {
+        props: { steps: createSteps() },
+      });
+
+      const items = wrapper.findAll('.step-item');
+      for (const item of items) {
+        expect(item.classes()).not.toContain('completed');
+      }
+    });
+
+    it('renders checkbox as checked for completed steps', () => {
+      const stepsWithCompleted: Step[] = [
+        { id: 'step-1', title: 'Done', order: 0, completed: true },
+      ];
+
+      const wrapper = mount(StepList, {
+        props: { steps: stepsWithCompleted },
+      });
+
+      const checkbox = wrapper.find('.step-checkbox');
+      expect(checkbox.attributes('data-state')).toBe('checked');
+    });
+
+    it('renders checkbox as unchecked for incomplete steps', () => {
+      const wrapper = mount(StepList, {
+        props: { steps: createSteps() },
+      });
+
+      const checkbox = wrapper.find('.step-checkbox');
+      expect(checkbox.attributes('data-state')).toBe('unchecked');
+    });
   });
 });

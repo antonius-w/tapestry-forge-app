@@ -20,6 +20,8 @@ export const usePlanStore = defineStore('plan', () => {
   const updateStepError = ref<string | null>(null);
   const isRemovingStep = ref<boolean>(false);
   const removeStepError = ref<string | null>(null);
+  const isTogglingStepCompletion = ref<boolean>(false);
+  const toggleStepCompletionError = ref<string | null>(null);
 
   // Repository instance - allow injection for testing
   let repository: PlanRepository = planRepository;
@@ -43,6 +45,7 @@ export const usePlanStore = defineStore('plan', () => {
     addStepError.value = null;
     updateStepError.value = null;
     removeStepError.value = null;
+    toggleStepCompletionError.value = null;
   }
 
   /**
@@ -304,6 +307,64 @@ export const usePlanStore = defineStore('plan', () => {
     }
   }
 
+  /**
+   * Toggle the completion state of a step within a plan.
+   *
+   * Flips the `completed` flag on the step. Preserves step identity and ordering.
+   *
+   * @param planId - The plan identifier
+   * @param stepId - The step identifier
+   * @returns The updated step, or null if the plan or step was not found
+   */
+  function toggleStepCompletion(planId: string, stepId: string): Step | null {
+    clearErrors();
+    isTogglingStepCompletion.value = true;
+
+    try {
+      const plan = repository.getById(planId);
+
+      if (!plan) {
+        toggleStepCompletionError.value = 'Plan not found';
+        isTogglingStepCompletion.value = false;
+        return null;
+      }
+
+      const steps = plan.steps;
+
+      if (!steps || steps.length === 0) {
+        toggleStepCompletionError.value = 'Step not found';
+        isTogglingStepCompletion.value = false;
+        return null;
+      }
+
+      const stepIndex = steps.findIndex((s) => s.id === stepId);
+
+      if (stepIndex === -1) {
+        toggleStepCompletionError.value = 'Step not found';
+        isTogglingStepCompletion.value = false;
+        return null;
+      }
+
+      const updatedSteps = steps.map((step, index) =>
+        index === stepIndex ? { ...step, completed: !step.completed } : step,
+      );
+
+      const updatedPlan = repository.update(planId, { steps: updatedSteps });
+
+      if (updatedPlan) {
+        plans.value = repository.getAll();
+      }
+
+      isTogglingStepCompletion.value = false;
+      return updatedSteps[stepIndex] ?? null;
+    } catch (err) {
+      toggleStepCompletionError.value =
+        err instanceof Error ? err.message : 'Failed to toggle step completion';
+      isTogglingStepCompletion.value = false;
+      throw err;
+    }
+  }
+
   const hasPlans = computed(() => plans.value.length > 0);
   const hasError = computed(() => error.value !== null);
   const hasCreateError = computed(() => createError.value !== null);
@@ -312,6 +373,7 @@ export const usePlanStore = defineStore('plan', () => {
   const hasAddStepError = computed(() => addStepError.value !== null);
   const hasUpdateStepError = computed(() => updateStepError.value !== null);
   const hasRemoveStepError = computed(() => removeStepError.value !== null);
+  const hasToggleStepCompletionError = computed(() => toggleStepCompletionError.value !== null);
   const isAnyOperationLoading = computed(
     () =>
       isLoading.value ||
@@ -320,7 +382,8 @@ export const usePlanStore = defineStore('plan', () => {
       isDeleting.value ||
       isAddingStep.value ||
       isUpdatingStep.value ||
-      isRemovingStep.value,
+      isRemovingStep.value ||
+      isTogglingStepCompletion.value,
   );
 
   return {
@@ -339,6 +402,8 @@ export const usePlanStore = defineStore('plan', () => {
     updateStepError,
     isRemovingStep,
     removeStepError,
+    isTogglingStepCompletion,
+    toggleStepCompletionError,
 
     hasPlans,
     hasError,
@@ -348,6 +413,7 @@ export const usePlanStore = defineStore('plan', () => {
     hasAddStepError,
     hasUpdateStepError,
     hasRemoveStepError,
+    hasToggleStepCompletionError,
     isAnyOperationLoading,
 
     setRepository,
@@ -359,6 +425,7 @@ export const usePlanStore = defineStore('plan', () => {
     addStep,
     updateStep,
     removeStep,
+    toggleStepCompletion,
     clearErrors,
   };
 });

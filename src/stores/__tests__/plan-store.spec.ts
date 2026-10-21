@@ -71,6 +71,7 @@ describe('usePlanStore', () => {
       expect(store.addStepError).toBeNull();
       expect(store.updateStepError).toBeNull();
       expect(store.removeStepError).toBeNull();
+      expect(store.toggleStepCompletionError).toBeNull();
     });
 
     it('should have operation loading states as false', () => {
@@ -80,6 +81,7 @@ describe('usePlanStore', () => {
       expect(store.isAddingStep).toBe(false);
       expect(store.isUpdatingStep).toBe(false);
       expect(store.isRemovingStep).toBe(false);
+      expect(store.isTogglingStepCompletion).toBe(false);
     });
 
     it('should have hasPlans as false when no plans exist', () => {
@@ -641,6 +643,124 @@ describe('usePlanStore', () => {
     });
   });
 
+  describe('toggleStepCompletion', () => {
+    it('should mark an incomplete step as completed', () => {
+      const plan = testRepository.create({ title: 'Test Plan', date: '2026-10-04' });
+      const step = store.addStep(plan.id, { title: 'Step to complete' });
+
+      const updated = store.toggleStepCompletion(plan.id, step!.id);
+
+      expect(updated).not.toBeNull();
+      expect(updated?.completed).toBe(true);
+    });
+
+    it('should mark a completed step as incomplete', () => {
+      const plan = testRepository.create({ title: 'Test Plan', date: '2026-10-04' });
+      const step = store.addStep(plan.id, { title: 'Step to uncomplete' });
+
+      store.toggleStepCompletion(plan.id, step!.id);
+      const updated = store.toggleStepCompletion(plan.id, step!.id);
+
+      expect(updated?.completed).toBe(false);
+    });
+
+    it('should preserve step identity and ordering when toggling', () => {
+      const plan = testRepository.create({ title: 'Test Plan', date: '2026-10-04' });
+      store.addStep(plan.id, { title: 'Step 1' });
+      const step2 = store.addStep(plan.id, { title: 'Step 2' });
+      store.addStep(plan.id, { title: 'Step 3' });
+
+      const updated = store.toggleStepCompletion(plan.id, step2!.id);
+
+      expect(updated?.id).toBe(step2!.id);
+      expect(updated?.order).toBe(1);
+      expect(updated?.title).toBe('Step 2');
+    });
+
+    it('should persist completion state through the repository', () => {
+      const plan = testRepository.create({ title: 'Test Plan', date: '2026-10-04' });
+      const step = store.addStep(plan.id, { title: 'Step' });
+
+      store.toggleStepCompletion(plan.id, step!.id);
+
+      const found = testRepository.getById(plan.id);
+      expect(found?.steps?.[0]?.completed).toBe(true);
+    });
+
+    it('should update the plans list after toggling completion', () => {
+      const plan = testRepository.create({ title: 'Test Plan', date: '2026-10-04' });
+      const step = store.addStep(plan.id, { title: 'Step' });
+      store.loadPlans();
+
+      store.toggleStepCompletion(plan.id, step!.id);
+
+      const updatedPlan = store.plans.find((p) => p.id === plan.id);
+      expect(updatedPlan?.steps?.[0]?.completed).toBe(true);
+    });
+
+    it('should not affect other steps when toggling one', () => {
+      const plan = testRepository.create({ title: 'Test Plan', date: '2026-10-04' });
+      const step1 = store.addStep(plan.id, { title: 'Step 1' });
+      const step2 = store.addStep(plan.id, { title: 'Step 2' });
+
+      store.toggleStepCompletion(plan.id, step1!.id);
+
+      const found = testRepository.getById(plan.id);
+      expect(found?.steps?.[0]?.completed).toBe(true);
+      expect(found?.steps?.[1]?.completed).toBeUndefined();
+      expect(step2).not.toBeNull();
+    });
+
+    it('should return null when toggling in a non-existent plan', () => {
+      const result = store.toggleStepCompletion('non-existent', 'step-id');
+
+      expect(result).toBeNull();
+      expect(store.toggleStepCompletionError).toBe('Plan not found');
+    });
+
+    it('should return null when toggling a non-existent step', () => {
+      const plan = testRepository.create({ title: 'Test Plan', date: '2026-10-04' });
+
+      const result = store.toggleStepCompletion(plan.id, 'non-existent-step');
+
+      expect(result).toBeNull();
+      expect(store.toggleStepCompletionError).toBe('Step not found');
+    });
+
+    it('should return null when plan has no steps', () => {
+      const plan = testRepository.create({ title: 'Test Plan', date: '2026-10-04' });
+
+      const result = store.toggleStepCompletion(plan.id, 'any-step');
+
+      expect(result).toBeNull();
+      expect(store.toggleStepCompletionError).toBe('Step not found');
+    });
+
+    it('should clear errors before toggling', () => {
+      store.toggleStepCompletionError = 'Previous error';
+      const plan = testRepository.create({ title: 'Test Plan', date: '2026-10-04' });
+      const step = store.addStep(plan.id, { title: 'Step' });
+
+      store.toggleStepCompletion(plan.id, step!.id);
+      expect(store.toggleStepCompletionError).toBeNull();
+    });
+
+    it('should handle repository failures', () => {
+      const plan = testRepository.create({ title: 'Test Plan', date: '2026-10-04' });
+      const step = store.addStep(plan.id, { title: 'Step' });
+
+      testRepository.update = vi.fn<
+        (id: string, updates: Partial<Omit<Plan, 'id'>>) => Plan | null
+      >(() => {
+        throw new Error('Storage failure');
+      });
+
+      expect(() => store.toggleStepCompletion(plan.id, step!.id)).toThrow('Storage failure');
+      expect(store.toggleStepCompletionError).toBe('Storage failure');
+      expect(store.isTogglingStepCompletion).toBe(false);
+    });
+  });
+
   describe('clearErrors', () => {
     it('should clear all error states', () => {
       store.error = 'Load error';
@@ -650,6 +770,7 @@ describe('usePlanStore', () => {
       store.addStepError = 'Add step error';
       store.updateStepError = 'Update step error';
       store.removeStepError = 'Remove step error';
+      store.toggleStepCompletionError = 'Toggle completion error';
 
       store.clearErrors();
 
@@ -660,6 +781,7 @@ describe('usePlanStore', () => {
       expect(store.addStepError).toBeNull();
       expect(store.updateStepError).toBeNull();
       expect(store.removeStepError).toBeNull();
+      expect(store.toggleStepCompletionError).toBeNull();
     });
   });
 
@@ -721,6 +843,13 @@ describe('usePlanStore', () => {
       expect(store.hasRemoveStepError).toBe(true);
     });
 
+    it('should have hasToggleStepCompletionError computed correctly', () => {
+      expect(store.hasToggleStepCompletionError).toBe(false);
+
+      store.toggleStepCompletionError = 'Test error';
+      expect(store.hasToggleStepCompletionError).toBe(true);
+    });
+
     it('should have isAnyOperationLoading computed correctly', () => {
       expect(store.isAnyOperationLoading).toBe(false);
 
@@ -752,6 +881,10 @@ describe('usePlanStore', () => {
       expect(store.isAnyOperationLoading).toBe(true);
 
       store.isRemovingStep = false;
+      store.isTogglingStepCompletion = true;
+      expect(store.isAnyOperationLoading).toBe(true);
+
+      store.isTogglingStepCompletion = false;
       expect(store.isAnyOperationLoading).toBe(false);
     });
   });
