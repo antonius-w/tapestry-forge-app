@@ -77,7 +77,7 @@ describe('StepList', () => {
       props: { steps: createSteps() },
     });
 
-    const editButtons = wrapper.findAll('.action-button.edit');
+    const editButtons = wrapper.findAll('button.edit');
     await editButtons[0]?.trigger('click');
 
     expect(wrapper.emitted('edit')).toBeTruthy();
@@ -89,7 +89,7 @@ describe('StepList', () => {
       props: { steps: createSteps() },
     });
 
-    const deleteButtons = wrapper.findAll('.action-button.delete');
+    const deleteButtons = wrapper.findAll('button.delete');
     await deleteButtons[1]?.trigger('click');
 
     expect(wrapper.emitted('delete')).toBeTruthy();
@@ -102,7 +102,7 @@ describe('StepList', () => {
     });
 
     const items = wrapper.findAll('.step-item');
-    const moveUpButtons = items[1]?.findAll('.action-button');
+    const moveUpButtons = items[1]?.findAll('button');
     const upButton = moveUpButtons?.[0];
 
     await upButton?.trigger('click');
@@ -117,7 +117,7 @@ describe('StepList', () => {
     });
 
     const items = wrapper.findAll('.step-item');
-    const moveDownButtons = items[0]?.findAll('.action-button');
+    const moveDownButtons = items[0]?.findAll('button');
     const downButton = moveDownButtons?.[1];
 
     await downButton?.trigger('click');
@@ -132,7 +132,7 @@ describe('StepList', () => {
     });
 
     const items = wrapper.findAll('.step-item');
-    const firstItemButtons = items[0]?.findAll('.action-button');
+    const firstItemButtons = items[0]?.findAll('button');
     const upButton = firstItemButtons?.[0];
 
     expect(upButton?.attributes('disabled')).toBeDefined();
@@ -144,7 +144,7 @@ describe('StepList', () => {
     });
 
     const items = wrapper.findAll('.step-item');
-    const lastItemButtons = items[2]?.findAll('.action-button');
+    const lastItemButtons = items[2]?.findAll('button');
     const downButton = lastItemButtons?.[1];
 
     expect(downButton?.attributes('disabled')).toBeDefined();
@@ -156,7 +156,7 @@ describe('StepList', () => {
     });
 
     const items = wrapper.findAll('.step-item');
-    const secondItemButtons = items[1]?.findAll('.action-button');
+    const secondItemButtons = items[1]?.findAll('button');
     const upButton = secondItemButtons?.[0];
 
     expect(upButton?.attributes('disabled')).toBeUndefined();
@@ -168,7 +168,7 @@ describe('StepList', () => {
     });
 
     const items = wrapper.findAll('.step-item');
-    const secondItemButtons = items[1]?.findAll('.action-button');
+    const secondItemButtons = items[1]?.findAll('button');
     const downButton = secondItemButtons?.[1];
 
     expect(downButton?.attributes('disabled')).toBeUndefined();
@@ -192,7 +192,7 @@ describe('StepList', () => {
     const items = wrapper.findAll('.step-item');
     expect(items).toHaveLength(1);
 
-    const buttons = items[0]?.findAll('.action-button');
+    const buttons = items[0]?.findAll('button');
     expect(buttons?.[0]?.attributes('disabled')).toBeDefined();
     expect(buttons?.[1]?.attributes('disabled')).toBeDefined();
   });

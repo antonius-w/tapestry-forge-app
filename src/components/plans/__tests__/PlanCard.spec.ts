@@ -3,6 +3,8 @@ import { mount } from '@vue/test-utils';
 import { setActivePinia, createPinia } from 'pinia';
 import { createRouter, createWebHistory } from 'vue-router';
 import PlanCard from '@/components/plans/PlanCard.vue';
+import { AlertDialogCancel } from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
 import { usePlanStore } from '@/stores/plan-store';
 import { PlanRepository } from '@/repositories/plan-repository';
 import type { Plan } from '@/models/plan';
@@ -153,6 +155,7 @@ describe('PlanCard', () => {
   it('shows delete confirmation when delete button is clicked', async () => {
     const wrapper = mount(PlanCard, {
       props: { plan: mockPlan },
+      attachTo: document.body,
       global: {
         plugins: [router],
       },
@@ -161,14 +164,17 @@ describe('PlanCard', () => {
     const deleteButton = wrapper.find('button.delete-button');
     await deleteButton.trigger('click');
 
-    expect(wrapper.text()).toContain('Delete Plan');
-    expect(wrapper.text()).toContain('Are you sure you want to delete');
-    expect(wrapper.text()).toContain('"Test Plan"');
+    expect(document.body.textContent).toContain('Delete Plan');
+    expect(document.body.textContent).toContain('Are you sure you want to delete');
+    expect(document.body.textContent).toContain('"Test Plan"');
+
+    wrapper.unmount();
   });
 
   it('hides delete confirmation when cancel is clicked', async () => {
     const wrapper = mount(PlanCard, {
       props: { plan: mockPlan },
+      attachTo: document.body,
       global: {
         plugins: [router],
       },
@@ -178,11 +184,14 @@ describe('PlanCard', () => {
     const deleteButton = wrapper.find('button.delete-button');
     await deleteButton.trigger('click');
 
-    // Cancel it
-    const cancelButton = wrapper.find('button.cancel');
-    await cancelButton.trigger('click');
+    // Find and click cancel via component
+    const cancelComponent = wrapper.findComponent(AlertDialogCancel);
+    expect(cancelComponent.exists()).toBe(true);
+    await cancelComponent.trigger('click');
 
-    expect(wrapper.text()).not.toContain('Delete Plan');
+    expect(document.body.textContent).not.toContain('Are you sure you want to delete');
+
+    wrapper.unmount();
   });
 
   it('emits delete event when delete is confirmed', async () => {
@@ -194,6 +203,7 @@ describe('PlanCard', () => {
 
     const wrapper = mount(PlanCard, {
       props: { plan: createdPlan },
+      attachTo: document.body,
       global: {
         plugins: [router],
       },
@@ -203,9 +213,12 @@ describe('PlanCard', () => {
     const deleteButton = wrapper.find('button.delete-button');
     await deleteButton.trigger('click');
 
-    // Confirm delete
-    const confirmButton = wrapper.find('button.confirm');
-    await confirmButton.trigger('click');
+    // Find and click the Delete confirm button in the dialog
+    const allButtons = wrapper.findAllComponents(Button);
+    const confirmButton = allButtons.find((b) => b.text() === 'Delete');
+    expect(confirmButton).toBeTruthy();
+    await confirmButton!.trigger('click');
+    await wrapper.vm.$nextTick();
 
     // Check that the delete event was emitted
     expect(wrapper.emitted('delete')).toBeTruthy();
@@ -214,11 +227,14 @@ describe('PlanCard', () => {
     // Verify plan was actually deleted from repository
     const allPlans = testRepository.getAll();
     expect(allPlans).toHaveLength(0);
+
+    wrapper.unmount();
   });
 
-  it('has delete confirmation modal with cancel and confirm buttons', async () => {
+  it('has delete confirmation dialog with cancel and confirm buttons', async () => {
     const wrapper = mount(PlanCard, {
       props: { plan: mockPlan },
+      attachTo: document.body,
       global: {
         plugins: [router],
       },
@@ -228,10 +244,17 @@ describe('PlanCard', () => {
     const deleteButton = wrapper.find('button.delete-button');
     await deleteButton.trigger('click');
 
-    // Should show modal with both buttons
-    expect(wrapper.find('button.cancel').exists()).toBe(true);
-    expect(wrapper.find('button.confirm').exists()).toBe(true);
-    expect(wrapper.text()).toContain('Are you sure you want to delete');
+    // Should show dialog with both buttons
+    const cancelComponent = wrapper.findComponent(AlertDialogCancel);
+    expect(cancelComponent.exists()).toBe(true);
+    expect(cancelComponent.text()).toBe('Cancel');
+
+    const allButtons = wrapper.findAllComponents(Button);
+    const confirmBtn = allButtons.find((b) => b.text() === 'Delete');
+    expect(confirmBtn).toBeTruthy();
+    expect(document.body.textContent).toContain('Are you sure you want to delete');
+
+    wrapper.unmount();
   });
 
   it('does not show step badge when plan has no steps', () => {

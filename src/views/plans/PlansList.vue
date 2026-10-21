@@ -5,6 +5,8 @@ import { usePlanStore } from '@/stores/plan-store';
 import { storeToRefs } from 'pinia';
 import { RouteName } from '@/router/route-names';
 import PlanCard from '@/components/plans/PlanCard.vue';
+import { Button } from '@/components/ui/button';
+import { X } from '@lucide/vue';
 
 const router = useRouter();
 const planStore = usePlanStore();
@@ -40,7 +42,7 @@ onMounted(() => {
   <div class="plans-list">
     <div class="header">
       <h1>Plans</h1>
-      <button @click="navigateToCreate" class="create">Create Plan</button>
+      <Button @click="navigateToCreate">Create Plan</Button>
     </div>
 
     <!-- Loading state -->
@@ -56,13 +58,15 @@ onMounted(() => {
     <!-- Empty state -->
     <div v-else-if="!hasPlans" class="empty">
       <p>No plans yet</p>
-      <button @click="navigateToCreate" class="create">Create your first plan</button>
+      <Button @click="navigateToCreate">Create your first plan</Button>
     </div>
 
     <!-- Success message -->
     <div v-if="successMessage" class="success">
       <p>{{ successMessage }}</p>
-      <button @click="clearSuccessMessage" class="close-success">×</button>
+      <Button variant="ghost" size="icon-sm" @click="clearSuccessMessage">
+        <X />
+      </Button>
     </div>
 
     <!-- Plans list -->
@@ -95,21 +99,6 @@ onMounted(() => {
 .header h1 {
   font-size: 1.5rem;
   font-weight: bold;
-}
-
-.create {
-  padding: 0.5rem 1rem;
-  background-color: #3b82f6;
-  color: white;
-  border: none;
-  border-radius: 0.25rem;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: background-color 0.2s;
-}
-
-.create:hover {
-  background-color: #2563eb;
 }
 
 .loading,
@@ -153,19 +142,5 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-
-.close-success {
-  background: none;
-  border: none;
-  font-size: 1.25rem;
-  color: #065f46;
-  cursor: pointer;
-  padding: 0;
-  line-height: 1;
-}
-
-.close-success:hover {
-  opacity: 0.7;
 }
 </style>
